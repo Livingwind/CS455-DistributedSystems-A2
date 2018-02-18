@@ -17,21 +17,29 @@ public class Server {
       Server server = new Server(portnum, poolsize);
       server.start();
     } catch(IOException ioe) {
+      System.err.println("ERROR: Could not start.");
       ioe.printStackTrace();
     }
   }
 
-  private Processor processor;
+  private ConnectionProcessor connectionProcessor;
+  private Thread processorThread;
   private ThreadPoolManager threadManager;
+  private Thread poolThread;
 
   public Server(int portnum, int poolsize) throws IOException {
     ChannelBuffer buff = new ChannelBuffer();
 
-    processor = new Processor(portnum, buff);
+    connectionProcessor = new ConnectionProcessor(portnum, buff);
     threadManager = new ThreadPoolManager(poolsize, buff);
   }
 
   // Main program loop
   public void start() {
+    processorThread = new Thread(connectionProcessor);
+    poolThread = new Thread(threadManager);
+
+    processorThread.start();
+    poolThread.start();
   }
 }

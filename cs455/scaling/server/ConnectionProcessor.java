@@ -1,18 +1,16 @@
 package cs455.scaling.server;
 
-import com.sun.org.apache.bcel.internal.generic.Select;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.*;
 import java.util.Iterator;
 import java.util.Set;
 
-public class Processor implements Runnable {
+public class ConnectionProcessor implements Runnable {
   private ChannelBuffer buffer;
   private Selector selector;
 
-  public Processor(int portnum, ChannelBuffer buffer) throws IOException {
+  public ConnectionProcessor(int portnum, ChannelBuffer buffer) throws IOException {
     selector = Selector.open();
 
     ServerSocketChannel server = ServerSocketChannel.open();
@@ -28,6 +26,7 @@ public class Processor implements Runnable {
       SocketChannel channel = server.accept();
       channel.configureBlocking(false);
       channel.register(selector, SelectionKey.OP_READ);
+      System.out.println("ALERT: New connection with " + channel.getRemoteAddress());
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -49,7 +48,7 @@ public class Processor implements Runnable {
       SelectionKey key = iter.next();
 
       if(key.isReadable()) {
-        buffer.put(key.channel());
+        buffer.put((SocketChannel) key.channel());
       }
       else if(key.isAcceptable()) {
         registerChannel((ServerSocketChannel) key.channel());
@@ -61,6 +60,7 @@ public class Processor implements Runnable {
 
   @Override
   public void run() {
+    System.out.println("ALERT: Accepting incoming connections.");
     try {
       do {
         int ready = selector.select();

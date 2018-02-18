@@ -1,16 +1,17 @@
 package cs455.scaling.server;
 
-import java.nio.channels.Channel;
-import java.util.LinkedList;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ChannelBuffer {
-  private LinkedList<Channel> channels;
+  private LinkedBlockingQueue<SocketChannel> channels =
+      new LinkedBlockingQueue<>();
 
   // May not need these synchronized blocks
-  public synchronized Channel get() {
+  public SocketChannel get() {
     return channels.poll();
   }
-  public synchronized void put(Channel channel) {
-    channels.push(channel);
+  public void put(SocketChannel channel) {
+    channels.add(channel);
   }
 }
