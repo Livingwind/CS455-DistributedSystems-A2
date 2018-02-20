@@ -1,17 +1,16 @@
 package cs455.scaling.server;
 
-import java.nio.channels.SocketChannel;
+import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class ThreadPoolManager implements Runnable {
-  private ChannelBuffer buff;
+  private KeyBuffer buff;
 
-  private ArrayList<Thread> threads = new ArrayList<>();
-  private ArrayList<Worker> workers = new ArrayList<>();
-  private LinkedList<Worker> avaliableWorkers = new LinkedList<>();
+  private ArrayList<Worker> busyWorkers = new ArrayList<>();
+  private LinkedList<Worker> idleWorkers = new LinkedList<>();
 
-  public ThreadPoolManager(int poolsize, ChannelBuffer buff) {
+  public ThreadPoolManager(int poolsize, KeyBuffer buff) {
     this.buff = buff;
 
     for(int i = 0; i < poolsize; i++) {
@@ -22,25 +21,30 @@ public class ThreadPoolManager implements Runnable {
   // Housekeeping operations
   private void createWorker() {
     Worker worker = new Worker();
-    workers.add(worker);
-    threads.add(new Thread(new Worker()));
+    idleWorkers.add(worker);
     queueWorker(worker);
   }
 
   private void startWorkers() {
-    for(Thread thread: threads) {
-      thread.start();
+    LinkedList<Worker> allWorkers = new LinkedList<>(idleWorkers);
+    allWorkers.addAll(busyWorkers);
+
+    for(Worker worker: allWorkers) {
+      worker.start();
     }
   }
 
   private void stopWorkers() {
-    for(Thread thread: threads) {
-      thread.interrupt();
+    LinkedList<Worker> allWorkers = new LinkedList<>(idleWorkers);
+    allWorkers.addAll(busyWorkers);
+
+    for(Worker worker: allWorkers) {
+      worker.interrupt();
     }
 
-    for(Thread thread: threads) {
+    for(Worker worker: allWorkers) {
       try {
-        thread.join(1);
+        worker.join(1);
       } catch (InterruptedException ire) {
         ire.printStackTrace();
       }
@@ -51,41 +55,43 @@ public class ThreadPoolManager implements Runnable {
 
   //
   private void queueWorker(Worker worker) {
-    avaliableWorkers.push(worker);
+    busyWorkers.remove(worker);
+    idleWorkers.push(worker);
   }
 
   private void findIdleWorkers() {
-    for(Worker worker: workers) {
+    for(Worker worker: busyWorkers) {
       if(worker.isIdle()) {
+        System.out.println("Found idle.");
         queueWorker(worker);
       }
     }
   }
 
-  private void assignWorker(SocketChannel channel) {
-    Worker worker = avaliableWorkers.pop();
-    worker.assignWork(channel);
+  private void assignWorker(SelectionKey key) {
+    Worker worker = idleWorkers.pop();
+    busyWorkers.add(worker);
+    worker.assignWork(key);
   }
 
   private void checkForWork() {
-    if(avaliableWorkers.isEmpty()) {
+    if(idleWorkers.isEmpty()) {
       return;
     }
 
-    SocketChannel channel = buff.get();
-    if(channel == null) {
+    SelectionKey key = buff.get();
+    if(key == null) {
       return;
     }
 
-    System.out.println("GOTMESSAGE");
-    assignWorker(channel);
+    assignWorker(key);
   }
 
   @Override
   public void run() {
     startWorkers();
     System.out.println("ALERT: Starting ThreadManager with " +
-        workers.size() + " workers.");
+        idleWorkers.size() + " workers.");
 
     do {
       findIdleWorkers();

@@ -42,9 +42,13 @@ public class Client {
     channel.connect(serverAddr);
     channel.finishConnect();
 
-    ByteBuffer buff = ByteBuffer.allocate(1);
-    buff.clear();
-    buff.put("a".getBytes());
-    channel.write(buff);
+    ByteBuffer buf = ByteBuffer.allocate(8000);
+    buf.clear();
+    buf.put("abc".getBytes());
+    buf.flip();
+
+    while(buf.hasRemaining()) {
+      channel.write(buf);
+    }
   }
 }

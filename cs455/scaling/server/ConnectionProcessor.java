@@ -7,10 +7,10 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class ConnectionProcessor implements Runnable {
-  private ChannelBuffer buffer;
+  private KeyBuffer buffer;
   private Selector selector;
 
-  public ConnectionProcessor(int portnum, ChannelBuffer buffer) throws IOException {
+  public ConnectionProcessor(int portnum, KeyBuffer buffer) throws IOException {
     selector = Selector.open();
 
     ServerSocketChannel server = ServerSocketChannel.open();
@@ -48,12 +48,12 @@ public class ConnectionProcessor implements Runnable {
       SelectionKey key = iter.next();
 
       if(key.isReadable()) {
-        buffer.put((SocketChannel) key.channel());
+        buffer.put(key);
       }
       else if(key.isAcceptable()) {
         registerChannel((ServerSocketChannel) key.channel());
-        iter.remove();
       }
+      iter.remove();
     }
   }
 

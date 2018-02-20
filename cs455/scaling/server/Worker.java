@@ -1,33 +1,75 @@
 package cs455.scaling.server;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-public class Worker implements Runnable {
-  SocketChannel channel = null;
+public class Worker extends Thread {
+  private volatile boolean idle = true;
+  private SelectionKey key = null;
+  private ByteBuffer buf = ByteBuffer.allocate(8000);
 
-  private void readBytes() {
-    System.out.println("Reading from channel");
+  private void readBytes() throws IOException {
+    SocketChannel channel = (SocketChannel) key.channel();
 
-    channel = null;
+    int read = 0;
+    buf.clear();
+
+    while (buf.hasRemaining() && read != -1) {
+      read = channel.read(buf);
+    }
+
+    if (read == -1) {
+      closeSocket();
+    }
+
+    System.out.println("MSG: " + new String(buf.array()));
   }
 
-  public synchronized boolean isIdle() {
-    return this.channel == null;
+  private void writeBytes() {
+
   }
 
-  public synchronized void assignWork(SocketChannel channel) {
-    System.out.println("Work assigned");
-    this.channel = channel;
+  private void closeSocket() {
+    System.out.println("Closing socket.");
+    try {
+      key.channel().close();
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
+    }
+    clearKey();
+  }
+
+  private void clearKey() {
+
+    key.cancel();
+    idle = true;
+  }
+
+  public boolean isIdle() {
+    return idle;
+  }
+
+  public synchronized void assignWork(SelectionKey key) {
+    this.key = key;
+    idle = false;
   }
 
   @Override
   public void run() {
     do {
-      if (this.channel == null) {
+      if (idle) {
         continue;
       }
 
-      readBytes();
+      try {
+        readBytes();
+      } catch (IOException ioe) {
+        ioe.printStackTrace();
+      }
+
+      clearKey();
     } while (!Thread.interrupted());
   }
 }

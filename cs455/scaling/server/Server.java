@@ -28,7 +28,7 @@ public class Server {
   private Thread poolThread;
 
   public Server(int portnum, int poolsize) throws IOException {
-    ChannelBuffer buff = new ChannelBuffer();
+    KeyBuffer buff = new KeyBuffer();
 
     connectionProcessor = new ConnectionProcessor(portnum, buff);
     threadManager = new ThreadPoolManager(poolsize, buff);
