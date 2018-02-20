@@ -1,7 +1,10 @@
 package cs455.scaling.client;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 public class Client {
   public static void main(String[] args) {
@@ -16,7 +19,11 @@ public class Client {
     int rate = Integer.parseInt(args[2]);
 
     Client client = new Client(serverAddr, rate);
-    client.start();
+    try {
+      client.start();
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
+    }
   }
 
   private InetSocketAddress serverAddr;
@@ -29,6 +36,15 @@ public class Client {
   }
 
   // Main program loop
-  public void start() {
+  public void start() throws IOException {
+    SocketChannel channel = SocketChannel.open();
+    channel.configureBlocking(false);
+    channel.connect(serverAddr);
+    channel.finishConnect();
+
+    ByteBuffer buff = ByteBuffer.allocate(1);
+    buff.clear();
+    buff.put("a".getBytes());
+    channel.write(buff);
   }
 }

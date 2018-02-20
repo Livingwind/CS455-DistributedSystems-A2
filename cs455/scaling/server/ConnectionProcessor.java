@@ -52,9 +52,8 @@ public class ConnectionProcessor implements Runnable {
       }
       else if(key.isAcceptable()) {
         registerChannel((ServerSocketChannel) key.channel());
+        iter.remove();
       }
-
-      iter.remove();
     }
   }
 

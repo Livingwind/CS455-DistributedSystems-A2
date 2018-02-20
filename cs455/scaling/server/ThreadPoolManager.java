@@ -9,7 +9,7 @@ public class ThreadPoolManager implements Runnable {
 
   private ArrayList<Thread> threads = new ArrayList<>();
   private ArrayList<Worker> workers = new ArrayList<>();
-  private LinkedList<Worker> avaliableWorkers = new LinkedList<Worker>();
+  private LinkedList<Worker> avaliableWorkers = new LinkedList<>();
 
   public ThreadPoolManager(int poolsize, ChannelBuffer buff) {
     this.buff = buff;
@@ -77,14 +77,15 @@ public class ThreadPoolManager implements Runnable {
       return;
     }
 
+    System.out.println("GOTMESSAGE");
     assignWorker(channel);
   }
 
   @Override
   public void run() {
+    startWorkers();
     System.out.println("ALERT: Starting ThreadManager with " +
         workers.size() + " workers.");
-    startWorkers();
 
     do {
       findIdleWorkers();
