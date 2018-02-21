@@ -39,9 +39,6 @@ public class Worker extends Thread {
       System.out.println("CLOSING");
       closeSocket();
     }
-
-    System.out.println("Message from " + ((SocketChannel) key.channel()).getRemoteAddress());
-    System.out.println("Parsed by: " + Thread.currentThread());
   }
 
   private void writeBytes() {
@@ -49,13 +46,14 @@ public class Worker extends Thread {
   }
 
   private void closeSocket() {
+    System.out.println("Closing socket.");
     try {
       key.channel().close();
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
+    key.cancel();
   }
-
 
   @Override
   public void run() {
@@ -65,11 +63,10 @@ public class Worker extends Thread {
 
         try {
           readBytes();
+          key.interestOps(SelectionKey.OP_READ);
         } catch (IOException ioe) {
           closeSocket();
         }
-
-        key.cancel();
       } while (!Thread.interrupted());
     } catch (InterruptedException ie) {
       ie.printStackTrace();

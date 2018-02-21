@@ -31,14 +31,26 @@ public class Client {
   private Random rand = new Random();
   private ByteBuffer buf = ByteBuffer.allocate(8000);
 
+  public int sent = 0;
+  public int recv = 0;
 
   public Client(InetSocketAddress serverAddr, int rate) {
     this.serverAddr = serverAddr;
     this.rate = rate;
   }
 
+  public void clearStatistics() {
+    sent = 0;
+    recv = 0;
+  }
+  private synchronized void incrSent() {
+    sent++;
+  }
+  private synchronized void incrRecv() {
+    recv++;
+  }
+
   private void sendMessage (SocketChannel channel) throws IOException{
-    System.out.println("Sending...");
     buf.clear();
     byte[] bytes = new byte[8000];
     rand.nextBytes(bytes);
@@ -48,7 +60,11 @@ public class Client {
     while (buf.hasRemaining()) {
       channel.write(buf);
     }
-    System.out.println(buf.toString());
+    incrSent();
+  }
+
+  private void startChecker () {
+    (new Thread(new ClientThroughputChecker(this, 5))).start();
   }
 
   // Main program loop
@@ -59,6 +75,8 @@ public class Client {
     System.out.println("Connecting to server...");
     channel.finishConnect();
     System.out.println("Successfully connected.");
+
+    startChecker();
 
     do {
       sendMessage(channel);

@@ -26,20 +26,25 @@ public class Server {
   private Thread processorThread;
   private ThreadPoolManager threadManager;
   private Thread poolThread;
+  private ServerThroughputChecker checker;
+  private Thread checkerThread;
 
   public Server(int portnum, int poolsize) throws IOException {
     KeyBuffer buff = new KeyBuffer();
 
     connectionProcessor = new ConnectionProcessor(portnum, buff);
     threadManager = new ThreadPoolManager(poolsize, buff);
+    checker = new ServerThroughputChecker(threadManager, connectionProcessor, 5);
   }
 
   // Main program loop
   public void start() {
     processorThread = new Thread(connectionProcessor);
     poolThread = new Thread(threadManager);
+    checkerThread = new Thread(checker);
 
     processorThread.start();
     poolThread.start();
+    checkerThread.start();
   }
 }

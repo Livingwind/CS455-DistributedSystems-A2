@@ -13,4 +13,5 @@ public class KeyBuffer {
   public void put(SelectionKey key) {
     keys.add(key);
   }
+  public int size() { return keys.size(); }
 }

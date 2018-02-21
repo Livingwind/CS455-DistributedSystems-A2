@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class ConnectionProcessor implements Runnable {
+  private int clients = 0;
   private KeyBuffer buffer;
   private Selector selector;
 
@@ -21,12 +22,16 @@ public class ConnectionProcessor implements Runnable {
     this.buffer = buffer;
   }
 
+  public int getStatistics () {
+    return clients;
+  }
+
   private void registerChannel(ServerSocketChannel server) {
     try {
       SocketChannel channel = server.accept();
       channel.configureBlocking(false);
       channel.register(selector, SelectionKey.OP_READ);
-      System.out.println("ALERT: New connection with " + channel.getRemoteAddress());
+      clients++;
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -47,10 +52,16 @@ public class ConnectionProcessor implements Runnable {
     while(iter.hasNext()) {
       SelectionKey key = iter.next();
 
-      if(key.isReadable()) {
+      if(!key.isValid()) {
+        System.out.println("Client removed");
+        clients--;
+      }
+
+      if(key.isValid() && key.isReadable()) {
+        key.interestOps(SelectionKey.OP_WRITE);
         buffer.put(key);
       }
-      else if(key.isAcceptable()) {
+      else if(key.isValid() && key.isAcceptable()) {
         registerChannel((ServerSocketChannel) key.channel());
       }
       iter.remove();

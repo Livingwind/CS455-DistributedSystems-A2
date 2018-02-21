@@ -6,9 +6,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ThreadPoolManager implements Runnable {
   private KeyBuffer buff;
-
   private ArrayList<Worker> allWorkers = new ArrayList<>();
   private LinkedBlockingQueue<Worker> idleWorkers = new LinkedBlockingQueue<>();
+
+  private int sent = 0;
 
   public ThreadPoolManager(int poolsize, KeyBuffer buff) {
     this.buff = buff;
@@ -17,15 +18,22 @@ public class ThreadPoolManager implements Runnable {
     }
   }
 
+  public int getStatistics () {
+    int value = sent;
+    sent = 0;
+    return value;
+  }
+
   // Method to add worker to internal ready queue.
   //  This gets called by a Worker to tell the manager it's
   //  ready for another job.
   public synchronized void queueWorker(Worker worker) {
-      try {
-        idleWorkers.put(worker);
-      } catch (InterruptedException ie) {
-        ie.printStackTrace();
-      }
+    sent++;
+    try {
+      idleWorkers.put(worker);
+    } catch (InterruptedException ie) {
+      ie.printStackTrace();
+    }
   }
 
   private void startWorkers() {
