@@ -1,26 +1,28 @@
 package cs455.scaling.client;
 
+import cs455.scaling.utils.ClientStatistics;
+
 import java.sql.Timestamp;
 
 public class ClientThroughputChecker implements Runnable {
+  private ClientStatistics stats;
   private int rate;
-  private Client client;
 
-  ClientThroughputChecker(Client client, int rate) {
+  ClientThroughputChecker(ClientStatistics stats, int rate) {
+    this.stats = stats;
     this.rate = rate;
-    this.client = client;
   }
 
   private void printStatistics() {
     Timestamp ts = new Timestamp(System.currentTimeMillis());
-    int sent = client.sent;
-    int recv = client.recv;
+    int sent = stats.getSent();
+    int recv = stats.getRecv();
 
     String s = String.format("[%s] Total Sent: %d, Total Received: %d",
         ts, sent, recv);
 
     System.out.println(s);
-    client.clearStatistics();
+    stats.clear();
   }
 
   @Override

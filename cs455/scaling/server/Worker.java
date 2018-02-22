@@ -1,6 +1,8 @@
 package cs455.scaling.server;
 
 import com.sun.org.apache.xpath.internal.SourceTree;
+import cs455.scaling.utils.ServerStatistics;
+import cs455.scaling.utils.SocketClosedException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -8,11 +10,13 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 public class Worker extends Thread {
+  private ServerStatistics stats;
   private ThreadPoolManager manager;
   private SelectionKey key = null;
   private ByteBuffer buf = ByteBuffer.allocate(8000);
 
-  public Worker(ThreadPoolManager manager) {
+  public Worker(ThreadPoolManager manager, ServerStatistics stats) {
+    this.stats = stats;
     this.manager = manager;
   }
 
@@ -25,7 +29,7 @@ public class Worker extends Thread {
     wait();
   }
 
-  private void readBytes() throws IOException {
+  private void readBytes() throws IOException, SocketClosedException {
     SocketChannel channel = (SocketChannel) key.channel();
 
     int read = 0;
@@ -36,8 +40,7 @@ public class Worker extends Thread {
     }
 
     if (read == -1) {
-      System.out.println("CLOSING");
-      closeSocket();
+      throw new SocketClosedException();
     }
   }
 
@@ -46,13 +49,13 @@ public class Worker extends Thread {
   }
 
   private void closeSocket() {
-    System.out.println("Closing socket.");
     try {
       key.channel().close();
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
     key.cancel();
+    stats.addClients(-1);
   }
 
   @Override
@@ -64,8 +67,11 @@ public class Worker extends Thread {
         try {
           readBytes();
           key.interestOps(SelectionKey.OP_READ);
-        } catch (IOException ioe) {
+          stats.incrSent();
+        } catch (SocketClosedException sce) {
           closeSocket();
+        } catch (IOException ioe) {
+          ioe.printStackTrace();
         }
       } while (!Thread.interrupted());
     } catch (InterruptedException ie) {

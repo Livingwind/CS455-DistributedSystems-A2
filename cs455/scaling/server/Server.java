@@ -1,5 +1,7 @@
 package cs455.scaling.server;
 
+import cs455.scaling.utils.ServerStatistics;
+
 import java.io.IOException;
 
 public class Server {
@@ -31,10 +33,11 @@ public class Server {
 
   public Server(int portnum, int poolsize) throws IOException {
     KeyBuffer buff = new KeyBuffer();
+    ServerStatistics stats = new ServerStatistics();
 
-    connectionProcessor = new ConnectionProcessor(portnum, buff);
-    threadManager = new ThreadPoolManager(poolsize, buff);
-    checker = new ServerThroughputChecker(threadManager, connectionProcessor, 5);
+    connectionProcessor = new ConnectionProcessor(portnum, buff, stats);
+    threadManager = new ThreadPoolManager(poolsize, buff, stats);
+    checker = new ServerThroughputChecker(stats, 5);
   }
 
   // Main program loop

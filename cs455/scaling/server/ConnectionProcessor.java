@@ -1,5 +1,7 @@
 package cs455.scaling.server;
 
+import cs455.scaling.utils.ServerStatistics;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.*;
@@ -7,11 +9,13 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class ConnectionProcessor implements Runnable {
-  private int clients = 0;
+  private ServerStatistics stats;
   private KeyBuffer buffer;
   private Selector selector;
 
-  public ConnectionProcessor(int portnum, KeyBuffer buffer) throws IOException {
+  public ConnectionProcessor(int portnum, KeyBuffer buffer,
+                             ServerStatistics stats) throws IOException {
+    this.stats = stats;
     selector = Selector.open();
 
     ServerSocketChannel server = ServerSocketChannel.open();
@@ -22,16 +26,12 @@ public class ConnectionProcessor implements Runnable {
     this.buffer = buffer;
   }
 
-  public int getStatistics () {
-    return clients;
-  }
-
   private void registerChannel(ServerSocketChannel server) {
     try {
       SocketChannel channel = server.accept();
       channel.configureBlocking(false);
       channel.register(selector, SelectionKey.OP_READ);
-      clients++;
+      stats.addClients(1);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -51,11 +51,6 @@ public class ConnectionProcessor implements Runnable {
 
     while(iter.hasNext()) {
       SelectionKey key = iter.next();
-
-      if(!key.isValid()) {
-        System.out.println("Client removed");
-        clients--;
-      }
 
       if(key.isValid() && key.isReadable()) {
         key.interestOps(SelectionKey.OP_WRITE);

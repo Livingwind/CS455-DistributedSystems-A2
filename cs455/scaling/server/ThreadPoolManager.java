@@ -1,5 +1,7 @@
 package cs455.scaling.server;
 
+import cs455.scaling.utils.ServerStatistics;
+
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -9,26 +11,19 @@ public class ThreadPoolManager implements Runnable {
   private ArrayList<Worker> allWorkers = new ArrayList<>();
   private LinkedBlockingQueue<Worker> idleWorkers = new LinkedBlockingQueue<>();
 
-  private int sent = 0;
-
-  public ThreadPoolManager(int poolsize, KeyBuffer buff) {
+  public ThreadPoolManager(int poolsize, KeyBuffer buff,
+                           ServerStatistics stats) {
     this.buff = buff;
     for(int i = 0; i < poolsize; i++) {
-      allWorkers.add(new Worker(this));
+      allWorkers.add(new Worker(this, stats));
     }
-  }
-
-  public int getStatistics () {
-    int value = sent;
-    sent = 0;
-    return value;
   }
 
   // Method to add worker to internal ready queue.
   //  This gets called by a Worker to tell the manager it's
   //  ready for another job.
   public synchronized void queueWorker(Worker worker) {
-    sent++;
+
     try {
       idleWorkers.put(worker);
     } catch (InterruptedException ie) {

@@ -1,9 +1,13 @@
 package cs455.scaling.client;
 
+import cs455.scaling.utils.ClientStatistics;
+import cs455.scaling.utils.HashCalculator;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Client {
@@ -26,45 +30,42 @@ public class Client {
     }
   }
 
-  private InetSocketAddress serverAddr;
-  private int rate;
   private Random rand = new Random();
   private ByteBuffer buf = ByteBuffer.allocate(8000);
+  private ArrayList<String> hashes = new ArrayList<String>();
 
-  public int sent = 0;
-  public int recv = 0;
+  private ClientStatistics stats = new ClientStatistics();
+  private InetSocketAddress serverAddr;
+  private int rate;
 
   public Client(InetSocketAddress serverAddr, int rate) {
     this.serverAddr = serverAddr;
     this.rate = rate;
   }
 
-  public void clearStatistics() {
-    sent = 0;
-    recv = 0;
-  }
-  private synchronized void incrSent() {
-    sent++;
-  }
-  private synchronized void incrRecv() {
-    recv++;
+  private void calcHash(byte[] bytes) {
+    String hash = HashCalculator.SHA1FromBytes(bytes);
+    hashes.add(hash);
+    System.out.println(hash);
   }
 
   private void sendMessage (SocketChannel channel) throws IOException{
-    buf.clear();
     byte[] bytes = new byte[8000];
     rand.nextBytes(bytes);
+    calcHash(bytes);
+
+    buf.clear();
     buf.put(bytes);
     buf.flip();
 
     while (buf.hasRemaining()) {
       channel.write(buf);
     }
-    incrSent();
+    stats.incrSent();
   }
 
   private void startChecker () {
-    (new Thread(new ClientThroughputChecker(this, 5))).start();
+    (new Thread(new ClientThroughputChecker(stats, 5))).start();
   }
 
   // Main program loop
