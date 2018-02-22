@@ -3,12 +3,19 @@ package cs455.scaling.client;
 import cs455.scaling.utils.ClientStatistics;
 import cs455.scaling.utils.HashCalculator;
 
+import javax.swing.plaf.InternalFrameUI;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import static java.nio.channels.SelectionKey.OP_READ;
 
 public class Client {
   public static void main(String[] args) {
@@ -30,12 +37,11 @@ public class Client {
     }
   }
 
-  private Random rand = new Random();
-  private ByteBuffer buf = ByteBuffer.allocate(8000);
-  private ArrayList<String> hashes = new ArrayList<String>();
-
-  private ClientStatistics stats = new ClientStatistics();
   private InetSocketAddress serverAddr;
+
+  private LinkedBlockingQueue<String> hashes = new LinkedBlockingQueue<>();
+  private ClientStatistics stats = new ClientStatistics();
+  private SocketChannel channel;
   private int rate;
 
   public Client(InetSocketAddress serverAddr, int rate) {
@@ -43,45 +49,48 @@ public class Client {
     this.rate = rate;
   }
 
-  private void calcHash(byte[] bytes) {
-    String hash = HashCalculator.SHA1FromBytes(bytes);
-    hashes.add(hash);
-    System.out.println(hash);
-  }
 
-  private void sendMessage (SocketChannel channel) throws IOException{
-    byte[] bytes = new byte[8000];
-    rand.nextBytes(bytes);
-    calcHash(bytes);
+  private void recvMessage(SelectionKey key) throws IOException{
 
-    buf.clear();
-    buf.put(bytes);
-    buf.flip();
 
-    while (buf.hasRemaining()) {
-      channel.write(buf);
+    synchronized (hashes) {
+      hashes.contains()
     }
-    stats.incrSent();
   }
 
-  private void startChecker () {
-    (new Thread(new ClientThroughputChecker(stats, 5))).start();
+  private void startThreads () {
+    (new ClientSender(stats, hashes, channel, rate)).start();
+    (new ClientThroughputChecker(stats, 5)).start();
   }
 
   // Main program loop
   public void start() throws IOException, InterruptedException {
-    SocketChannel channel = SocketChannel.open();
+    Selector selector = Selector.open();
+
+    channel = SocketChannel.open();
     channel.configureBlocking(false);
     channel.connect(serverAddr);
     System.out.println("Connecting to server...");
     channel.finishConnect();
     System.out.println("Successfully connected.");
+    channel.register(selector, OP_READ);
 
-    startChecker();
+    startThreads();
 
     do {
-      sendMessage(channel);
-      Thread.sleep(1000/rate);
+      int ready = selector.select();
+      if(ready == 0) {
+        continue;
+      }
+      Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+      while (keys.hasNext()) {
+        SelectionKey key = keys.next();
+        if (key.isReadable()) {
+          recvMessage(key);
+        }
+
+        keys.remove();
+      }
     } while (true);
-}
+  }
 }

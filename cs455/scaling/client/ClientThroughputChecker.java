@@ -4,7 +4,7 @@ import cs455.scaling.utils.ClientStatistics;
 
 import java.sql.Timestamp;
 
-public class ClientThroughputChecker implements Runnable {
+public class ClientThroughputChecker extends Thread {
   private ClientStatistics stats;
   private int rate;
 
