@@ -1,8 +1,8 @@
 package cs455.scaling.server;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
+import cs455.scaling.exceptions.SocketClosedException;
+import cs455.scaling.utils.MessagingConstants;
 import cs455.scaling.utils.ServerStatistics;
-import cs455.scaling.utils.SocketClosedException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -13,7 +13,7 @@ public class Worker extends Thread {
   private ServerStatistics stats;
   private ThreadPoolManager manager;
   private SelectionKey key = null;
-  private ByteBuffer buf = ByteBuffer.allocate(8000);
+  private ByteBuffer buf = ByteBuffer.allocate(MessagingConstants.RAND_DATA_BIT_SIZE);
 
   public Worker(ThreadPoolManager manager, ServerStatistics stats) {
     this.stats = stats;
