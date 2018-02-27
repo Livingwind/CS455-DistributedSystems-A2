@@ -56,15 +56,17 @@ public class ThreadPoolManager implements Runnable {
   }
 
   private void checkForWork() {
-    if (idleWorkers.isEmpty()) {
-      return;
-    }
-    SelectionKey key = buff.get();
-    if(key == null) {
-      return;
-    }
+    synchronized (idleWorkers) {
+      if (idleWorkers.isEmpty()) {
+        return;
+      }
+      SelectionKey key = buff.get();
+      if (key == null) {
+        return;
+      }
 
-    assignWorker(key);
+      assignWorker(key);
+    }
   }
 
   @Override

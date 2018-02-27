@@ -95,7 +95,9 @@ public class Client {
     channel.configureBlocking(false);
     channel.connect(serverAddr);
     System.out.println("Connecting to server...");
-    channel.finishConnect();
+    while(!channel.isConnected()) {
+      channel.finishConnect();
+    }
     System.out.println("Successfully connected.");
     channel.register(selector, OP_READ);
 

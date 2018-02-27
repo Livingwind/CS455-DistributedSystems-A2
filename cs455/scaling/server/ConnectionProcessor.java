@@ -51,13 +51,20 @@ public class ConnectionProcessor implements Runnable {
 
     while(iter.hasNext()) {
       SelectionKey key = iter.next();
-
-      if(key.isValid() && key.isReadable()) {
-        key.interestOps(SelectionKey.OP_WRITE);
-        buffer.put(key);
-      }
-      else if(key.isValid() && key.isAcceptable()) {
-        registerChannel((ServerSocketChannel) key.channel());
+      try {
+        if (key.isValid() && key.isReadable()) {
+          key.interestOps(SelectionKey.OP_WRITE);
+          buffer.put(key);
+        } else if (key.isValid() && key.isAcceptable()) {
+          registerChannel((ServerSocketChannel) key.channel());
+        }
+      } catch (CancelledKeyException cke) {
+        SocketChannel channel = (SocketChannel) key.channel();
+        try {
+          stats.removeClient(channel.getRemoteAddress().hashCode());
+        } catch (IOException ioe) {
+          ioe.printStackTrace();
+        }
       }
       iter.remove();
     }
