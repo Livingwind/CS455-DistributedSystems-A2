@@ -31,7 +31,7 @@ public class ConnectionProcessor implements Runnable {
       SocketChannel channel = server.accept();
       channel.configureBlocking(false);
       channel.register(selector, SelectionKey.OP_READ);
-      stats.addClients(1);
+      stats.addClient(channel.getRemoteAddress().hashCode());
     } catch (Exception e) {
       e.printStackTrace();
     }

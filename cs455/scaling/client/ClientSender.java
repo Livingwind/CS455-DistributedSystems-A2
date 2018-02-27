@@ -35,7 +35,6 @@ public class ClientSender extends Thread {
     } catch (InterruptedException ie) {
       ie.printStackTrace();
     }
-    System.out.println(hash);
   }
 
 

@@ -8,7 +8,6 @@ public class ServerThroughputChecker implements Runnable {
   private int rate;
   private ServerStatistics stats;
 
-
   public ServerThroughputChecker(ServerStatistics stats, int rate) {
     this.rate = rate;
     this.stats = stats;
@@ -16,14 +15,14 @@ public class ServerThroughputChecker implements Runnable {
 
   private void printStatistics() {
     Timestamp ts = new Timestamp(System.currentTimeMillis());
-    int sent = stats.getSent();
-    int clients = stats.getClients();
+    AllStatistics all = stats.allStats(rate);
 
-    String s = String.format("[%s] Server Throughput: %d messages/s, Active Clients: %d",
-        ts, sent/rate, clients);
+    String s = String.format("[%-23s] Server Throughput: %.2f messages/s, Active Clients: %d,\n" +
+        "\tMean Per-client Throughput: %.2f messages/s, Std. Dev. Of Per-client Throughput: %.2f messages/s",
+        ts, all.throughput, all.clients,
+        all.mean, all.stddev);
 
     System.out.println(s);
-    stats.clear();
   }
 
   @Override

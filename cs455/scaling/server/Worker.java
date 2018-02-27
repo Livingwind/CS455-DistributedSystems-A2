@@ -1,6 +1,7 @@
 package cs455.scaling.server;
 
 import cs455.scaling.exceptions.SocketClosedException;
+import cs455.scaling.utils.HashCalculator;
 import cs455.scaling.utils.MessagingConstants;
 import cs455.scaling.utils.ServerStatistics;
 
@@ -13,7 +14,7 @@ public class Worker extends Thread {
   private ServerStatistics stats;
   private ThreadPoolManager manager;
   private SelectionKey key = null;
-  private ByteBuffer buf = ByteBuffer.allocate(MessagingConstants.RAND_DATA_BIT_SIZE);
+  private ByteBuffer readBuf = ByteBuffer.allocate(MessagingConstants.RAND_DATA_BYTE_SIZE);
 
   public Worker(ThreadPoolManager manager, ServerStatistics stats) {
     this.stats = stats;
@@ -29,33 +30,58 @@ public class Worker extends Thread {
     wait();
   }
 
-  private void readBytes() throws IOException, SocketClosedException {
+  private byte[] readBytes() throws IOException, SocketClosedException {
     SocketChannel channel = (SocketChannel) key.channel();
 
     int read = 0;
-    buf.clear();
+    readBuf.clear();
 
-    while (buf.hasRemaining() && read != -1) {
-      read = channel.read(buf);
+    while (readBuf.hasRemaining() && read != -1) {
+      read = channel.read(readBuf);
     }
 
     if (read == -1) {
       throw new SocketClosedException();
     }
+
+    // Reset the interest to READ since it's set to writer in the processor
+    key.interestOps(SelectionKey.OP_READ);
+    return readBuf.array();
   }
 
-  private void writeBytes() {
+  private void writeBytes(byte[] bytes) throws IOException {
+    SocketChannel channel = (SocketChannel) key.channel();
+    String hash = HashCalculator.SHA1FromBytes(bytes);
+    int write = 0;
+    int bufSize = hash.getBytes().length + Integer.SIZE;
+    ByteBuffer writeBuf = ByteBuffer.allocate(bufSize);
 
+    writeBuf.putInt(hash.getBytes().length);
+    writeBuf.put(hash.getBytes());
+    writeBuf.flip();
+
+    while(writeBuf.hasRemaining() && write != -1) {
+      write = channel.write(writeBuf);
+    }
   }
 
   private void closeSocket() {
+    SocketChannel channel = (SocketChannel) key.channel();
     try {
-      key.channel().close();
+      stats.removeClient(channel.getRemoteAddress().hashCode());
+      channel.close();
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
     key.cancel();
-    stats.addClients(-1);
+  }
+
+  private void processKey() throws SocketClosedException, IOException {
+    byte[] data = readBytes();
+    writeBytes(data);
+
+    SocketChannel channel = (SocketChannel) key.channel();
+    stats.incrSent(channel.getRemoteAddress().hashCode());
   }
 
   @Override
@@ -65,9 +91,7 @@ public class Worker extends Thread {
         awaitWork();
 
         try {
-          readBytes();
-          key.interestOps(SelectionKey.OP_READ);
-          stats.incrSent();
+          processKey();
         } catch (SocketClosedException sce) {
           closeSocket();
         } catch (IOException ioe) {

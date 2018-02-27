@@ -54,25 +54,31 @@ public class Client {
   }
 
   private void recvMessage() throws IOException, SocketClosedException{
-    ByteBuffer buf = ByteBuffer.allocate(MessagingConstants.HASH_BIT_SIZE);
     int read = 0;
-    buf.clear();
+    ByteBuffer bufLen = ByteBuffer.allocate(Integer.SIZE/8);
+    while(bufLen.hasRemaining() && read != -1) {
+      read = channel.read(bufLen);
+    }
 
-    while(buf.hasRemaining() && read != -1) {
-      read = channel.read(buf);
+    bufLen.flip();
+    int msgSize = bufLen.getInt();
+    ByteBuffer bufData = ByteBuffer.allocate(msgSize);
+    while(bufData.hasRemaining() && read != -1) {
+      read = channel.read(bufData);
     }
 
     if(read == -1) {
       throw new SocketClosedException();
     }
 
-    String hash = new String(buf.array());
+    String hash = new String(bufData.array());
 
     try {
       removeMessage(hash);
     } catch (HashNotFound hnfe) {
-      System.err.println("ERROR: Hash not found in list.");
+      System.err.println("ERROR: Hash <" + hash + ">not found in list.");
     }
+    stats.incrRecv();
   }
 
   private void removeMessage(String hash) throws HashNotFound {
