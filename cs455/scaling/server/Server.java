@@ -37,7 +37,7 @@ public class Server {
 
     connectionProcessor = new ConnectionProcessor(portnum, buff, stats);
     threadManager = new ThreadPoolManager(poolsize, buff, stats);
-    checker = new ServerThroughputChecker(stats, 5);
+    checker = new ServerThroughputChecker(stats, 20);
   }
 
   // Main program loop

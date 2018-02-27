@@ -84,7 +84,7 @@ public class Client {
 
   private void startThreads () {
     (new ClientSender(stats, hashes, channel, rate)).start();
-    (new ClientThroughputChecker(stats, 5)).start();
+    (new ClientThroughputChecker(stats, 20)).start();
   }
 
   // Main program loop
