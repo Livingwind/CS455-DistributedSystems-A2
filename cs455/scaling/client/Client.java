@@ -3,21 +3,14 @@ package cs455.scaling.client;
 import cs455.scaling.exceptions.HashNotFound;
 import cs455.scaling.exceptions.SocketClosedException;
 import cs455.scaling.utils.ClientStatistics;
-import cs455.scaling.utils.HashCalculator;
-import cs455.scaling.utils.MessagingConstants;
 
-import javax.swing.plaf.InternalFrameUI;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Random;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
@@ -43,7 +36,7 @@ public class Client {
 
   private InetSocketAddress serverAddr;
 
-  private LinkedBlockingQueue<String> hashes = new LinkedBlockingQueue<>();
+  private HashList hashes = new HashList();
   private ClientStatistics stats = new ClientStatistics();
   private SocketChannel channel;
   private int rate;
@@ -75,17 +68,14 @@ public class Client {
 
     try {
       removeMessage(hash);
+      stats.incrRecv();
     } catch (HashNotFound hnfe) {
       System.err.println("ERROR: Hash <" + hash + ">not found in list.");
     }
-    stats.incrRecv();
   }
 
   private void removeMessage(String hash) throws HashNotFound {
-    boolean result;
-    synchronized (hashes) {
-      result = hashes.remove(hash);
-    }
+    boolean result = hashes.remove(hash);
 
     if (!result) {
       throw new HashNotFound();

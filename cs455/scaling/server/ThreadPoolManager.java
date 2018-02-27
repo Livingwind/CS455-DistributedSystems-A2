@@ -4,12 +4,12 @@ import cs455.scaling.utils.ServerStatistics;
 
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.LinkedList;
 
 public class ThreadPoolManager implements Runnable {
   private KeyBuffer buff;
   private ArrayList<Worker> allWorkers = new ArrayList<>();
-  private LinkedBlockingQueue<Worker> idleWorkers = new LinkedBlockingQueue<>();
+  private LinkedList<Worker> idleWorkers = new LinkedList<>();
 
   public ThreadPoolManager(int poolsize, KeyBuffer buff,
                            ServerStatistics stats) {
@@ -22,12 +22,9 @@ public class ThreadPoolManager implements Runnable {
   // Method to add worker to internal ready queue.
   //  This gets called by a Worker to tell the manager it's
   //  ready for another job.
-  public synchronized void queueWorker(Worker worker) {
-
-    try {
-      idleWorkers.put(worker);
-    } catch (InterruptedException ie) {
-      ie.printStackTrace();
+  public void queueWorker(Worker worker) {
+    synchronized (idleWorkers) {
+      idleWorkers.add(worker);
     }
   }
 

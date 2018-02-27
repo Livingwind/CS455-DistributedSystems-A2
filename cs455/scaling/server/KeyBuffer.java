@@ -1,17 +1,16 @@
 package cs455.scaling.server;
 
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.LinkedList;
 
 public class KeyBuffer {
-  private LinkedBlockingQueue<SelectionKey> keys =
-      new LinkedBlockingQueue<>();
+  private LinkedList<SelectionKey> keys =
+      new LinkedList<>();
 
-  public SelectionKey get() {
+  public synchronized SelectionKey get() {
     return keys.poll();
   }
-  public void put(SelectionKey key) {
+  public synchronized void put(SelectionKey key) {
     keys.add(key);
   }
-  public int size() { return keys.size(); }
 }
