@@ -1,6 +1,6 @@
 CLASSES=${PWD}
 SCRIPT="cd $CLASSES;
-java cs455.scaling.client.Client 129.82.44.158 33000 4"
+java cs455.scaling.client.Client 129.82.44.172 33000 4"
 #$1 is the command-line argument
 for ((j=1;j<=$1;j++));
 do

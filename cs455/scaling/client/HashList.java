@@ -1,9 +1,9 @@
 package cs455.scaling.client;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class HashList {
-  ArrayList<String> list = new ArrayList<>();
+  LinkedList<String> list = new LinkedList<>();
 
   public synchronized boolean remove(String s) {
     return list.remove(s);

@@ -13,13 +13,13 @@ public class ServerThroughputChecker implements Runnable {
     this.stats = stats;
   }
 
-  private void printStatistics() {
+  private void printStatistics() throws InterruptedException {
     Timestamp ts = new Timestamp(System.currentTimeMillis());
     AllStatistics all = stats.allStats(rate);
 
     String s = String.format("[%-23s] Server Throughput: %.2f messages/s, Active Clients: %d,\n" +
         "\tMean Per-client Throughput: %.2f messages/s, Std. Dev. Of Per-client Throughput: %.2f messages/s",
-        ts, all.throughput, all.clients,
+        ts, all.throughput, all.connections,
         all.mean, all.stddev);
 
     System.out.println(s);
@@ -28,9 +28,8 @@ public class ServerThroughputChecker implements Runnable {
   @Override
   public void run() {
     do {
-      printStatistics();
-
       try {
+        printStatistics();
         Thread.sleep(rate * 1000);
       } catch (InterruptedException ie) {
         ie.printStackTrace();
