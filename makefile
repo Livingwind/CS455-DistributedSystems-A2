@@ -3,7 +3,7 @@ all: compile
 
 pkg: all
 	@echo -e "[INFO] Packaging submission"
-	@tar cvf Westerman_Christopher_ASG1.tar cs455/**/**/*.class \
+	@tar cvf Westerman_Christopher_ASG1.tar cs455/**/**/*.java \
 		README.txt makefile
 
 clean:
