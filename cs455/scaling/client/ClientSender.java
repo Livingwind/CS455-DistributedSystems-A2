@@ -2,6 +2,7 @@ package cs455.scaling.client;
 
 import cs455.scaling.utils.ClientStatistics;
 import cs455.scaling.utils.HashCalculator;
+import cs455.scaling.utils.MessagingConstants;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -10,7 +11,7 @@ import java.util.Random;
 
 public class ClientSender extends Thread {
   private Random rand = new Random();
-  private ByteBuffer buf = ByteBuffer.allocate(8000);
+  private ByteBuffer buf = ByteBuffer.allocate(MessagingConstants.RAND_DATA_BYTE_SIZE);
 
   private HashList hashes;
   private ClientStatistics stats;
@@ -32,7 +33,7 @@ public class ClientSender extends Thread {
 
 
   private void sendMessage(SocketChannel channel) throws IOException {
-    byte[] bytes = new byte[8000];
+    byte[] bytes = new byte[MessagingConstants.RAND_DATA_BYTE_SIZE];
     rand.nextBytes(bytes);
     calcHash(bytes);
 

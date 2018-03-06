@@ -35,7 +35,6 @@ public class Worker extends Thread {
 
     int read = 0;
     readBuf.clear();
-
     while (readBuf.hasRemaining() && read != -1) {
       read = channel.read(readBuf);
     }
@@ -92,10 +91,8 @@ public class Worker extends Thread {
 
         try {
           processKey();
-        } catch (SocketClosedException sce) {
+        } catch (Exception e) {
           closeSocket();
-        } catch (IOException ioe) {
-          ioe.printStackTrace();
         }
       } while (!Thread.interrupted());
     } catch (InterruptedException ie) {

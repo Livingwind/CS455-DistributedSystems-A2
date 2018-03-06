@@ -5,6 +5,7 @@ import cs455.scaling.exceptions.SocketClosedException;
 import cs455.scaling.utils.ClientStatistics;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -94,7 +95,7 @@ public class Client {
     channel = SocketChannel.open();
     channel.configureBlocking(false);
     channel.connect(serverAddr);
-    System.out.println("Connecting to server...");
+    System.out.println("Connecting to server from "+ InetAddress.getLocalHost().getHostName() + "...");
     while(!channel.isConnected()) {
       channel.finishConnect();
     }
